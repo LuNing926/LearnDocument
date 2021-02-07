@@ -1,7 +1,21 @@
  ## Window、PhoneWindow、DecorView
  - 每个Activity都有一个Window，Window是抽象类
+     是一个抽象概念，并不是真正的window，而是一个用于对真正的图形显示组件（Surface）做管理的 “虚拟窗口概念”。
+     我们在开发过程中的意识上可以认为Window就是一个屏幕窗口，这也是Android提出Window概念的目的所在，可以更好的面向开发者理解。
  - PhoneWindow是Window的唯一实现类
- - PhoneWindow中持有一个DecorView，所有view的根view
+     将Decoriew设置为整个应用窗口的根View。它是Android中的最基本的窗口系统，每个Activity 均会创建一个PhoneWindow对象，是Activity和整个View系统交互的接口。
+ - DecorView顶层视图
+     PhoneWindow中持有一个DecorView，所有view的根view。
+     DecirView的几个主要功能：
+     - Dispatch 从ViewRoot分发来的key、touch、trackball等外部事件；
+     - DecorView有一个直接的子View，我们称之为System Layout,这个View是从系统的Layout.xml中解析出的，它包含当前UI的风格，如是否带title、是否带process bar等。可以称这些属性为Window decorations。
+     - 作为PhoneWindow与ViewRoot之间的桥梁，ViewRoot通过DecorView设置窗口属性。//可以这样获取 View view = getWindow().getDecorView();
+     DecorView只有一个子元素为LinearLayout。代表整个Window界面，分三块区域：
+     - 通知栏
+     - 标题栏
+       DecorView里面TitleView可以设置requestWindowFeature(Window.FEATURE_NO_TITLE)取消掉
+     - 内容显示栏 ContentView
+       是一个id为content的FrameLayout，在Activity使用的setContentView就是把*.xml设置在这个FrameLayout上的
  
  ## Activity.setContentView
  从setContentView追踪window的窗口加载过程
