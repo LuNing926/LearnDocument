@@ -17,7 +17,7 @@
      - 内容显示栏 ContentView
        是一个id为content的FrameLayout，在Activity使用的setContentView就是把*.xml设置在这个FrameLayout上的
  
- ## Activity.setContentView
+ ## 创建方法
  从setContentView追踪window的窗口加载过程
  Activity.java -> getWindow(): PhoneWindow
  ```
