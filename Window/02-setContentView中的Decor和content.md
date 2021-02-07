@@ -4,9 +4,10 @@
 - Activity.java: onCreate
 ```
 public void setContentView(@LayoutRes int layoutResID) {
-       getWindow().setContentView(layoutResID);           //getWindow(): PhoneWindow
-       initWindowDecorActionBar();
-   }
+    //getWindow(): PhoneWindow
+    getWindow().setContentView(layoutResID);           
+    initWindowDecorActionBar();
+}
 ```
 PhoneWindow.java: installDecor()
 ```
@@ -14,7 +15,8 @@ PhoneWindow.java: installDecor()
 public void setContentView(int layoutResID) {
     ......
     if (mContentParent == null) {
-        installDecor();                                   // 创建DecorView
+        // 创建DecorView
+        installDecor();                                  
     } else if (!hasFeature(FEATURE_CONTENT_TRANSITIONS)) {
         mContentParent.removeAllViews();
     }
@@ -25,13 +27,15 @@ DecorView: installDecorView()
 private void installDecor() {
     mForceDecorInstall = false;
     if (mDecor == null) {
-        mDecor = generateDecor(-1);                       // new DecorView, 创建一个空的DecorView
+        // new DecorView, 创建一个空的DecorView
+        mDecor = generateDecor(-1);                       
         ......
      } else {
          mDecor.setWindow(this);
      }
      if (mContentParent == null) {
-         mContentParent = generateLayout(mDecor);         // 根据style、feature等设置窗口的属性，根据窗口类型（No actionbar，progress等）确定layout id
+         // 根据style、feature等设置窗口的属性，根据窗口类型（No actionbar，progress等）确定layout id
+         mContentParent = generateLayout(mDecor);         
     ......
 ```
 
