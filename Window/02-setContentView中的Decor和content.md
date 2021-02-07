@@ -33,6 +33,7 @@ private void installDecor() {
      if (mContentParent == null) {
          mContentParent = generateLayout(mDecor);         // 根据style、feature等设置窗口的属性，根据窗口类型（No actionbar，progress等）确定layout id
     ......
+```
 
 ## DecorView的install
 - 首先new一个DecorView，这里的DecorView其实是空的，没有内容，后面会通过应用设置的样式、属性为其选择布局文件，填充内容。
