@@ -48,7 +48,8 @@ protected DecorView generateDecor() {
         return new DecorView(getContext(), -1);
     }
 ```
-- 真正有用的是generateLayout,根据style、feature等设置窗口的属性，根据窗口类型（No actionbar，progress等）确定layout id
+- 真正有用的是generateLayout,根据style、feature等设置窗口的属性，根据窗口类型（No actionbar，progress等）确定layout id，
+  通过调用generateLayout将setContentView的内容赋值到mContentParent;
 ```
 protected ViewGroup generateLayout(DecorView decor) {
         // Apply data from current theme.
@@ -92,4 +93,15 @@ protected ViewGroup generateLayout(DecorView decor) {
         ...
         return contentParent;
     }
+```
+   创建完DecorView并且获取到mContentParent，接着就是将setContentView的内容添加到mContentParent中，也就是PhoneWindow中的
+```
+mContentParent.addView(view, params);
+```
+  最后调用Callback来通知界面发生改变。Callback是Window里面的一个接口，里面声明了当界面更改触摸时调用的各种方法。
+  在PhoneWindow里面并没有看到onContentChanged的实现类，最后看到Activity里面实现了Window.Callback接口而里面onContentChanged则是空的，
+  也就是应用可以通过重写该方法来监听布局内容的改变：
+```
+public void onContentChanged() {
+}
 ```
