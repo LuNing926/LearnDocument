@@ -105,3 +105,20 @@ mContentParent.addView(view, params);
 public void onContentChanged() {
 }
 ```
+## WindowManager.addView
+  - 上边的流程是将DecorView的内容加载出来，但最终和窗口绑定，窗口将view显示出来是通过WindowManager来实现的，
+  ViewManager看类名理解管理view的，是个抽象类，WindowManager继承ViewManager，getWindowManager()获取的是WindowManager：
+```
+void makeVisible() {
+        if (!mWindowAdded) {
+            ViewManager wm = getWindowManager();
+            wm.addView(mDecor, getWindow().getAttributes());
+            mWindowAdded = true;
+        }
+        mDecor.setVisibility(View.VISIBLE);
+    }
+```
+  - makeVisible是Activity创建的最后一步，此时窗口内容都加载完成了，将窗口visible给用户。
+  每一个Activity都是与一个Window绑定一起的，那么Window的创建以及WindowManager的绑定可能是在启动Activity的过程中进行，这里来确认一下。
+  startActivity流程前边会涉及AMS、ATMS、ActivityStartSupervisor、ActivityStack、ActivityThread等，我称这个过程为AMS阶段，大量判断进行准备工作，创建进程、分配任务栈、处理生命周期等，
+  我们直接调到ActivityThread.handleLauncherActivity()，这之后很快就会执行到Activity.onCreate()，进进入WMS阶段了。[Activity启动流程参考链接](https://blog.csdn.net/qq475703980/article/details/79701181)
