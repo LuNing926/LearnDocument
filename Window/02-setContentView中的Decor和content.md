@@ -121,4 +121,29 @@ void makeVisible() {
   - makeVisible是Activity创建的最后一步，此时窗口内容都加载完成了，将窗口visible给用户。
   每一个Activity都是与一个Window绑定一起的，那么Window的创建以及WindowManager的绑定可能是在启动Activity的过程中进行，这里来确认一下。
   startActivity流程前边会涉及AMS、ATMS、ActivityStartSupervisor、ActivityStack、ActivityThread等，我称这个过程为AMS阶段，大量判断进行准备工作，创建进程、分配任务栈、处理生命周期等，
-  我们直接调到ActivityThread.handleLauncherActivity()，这之后很快就会执行到Activity.onCreate()，进进入WMS阶段了。[Activity启动流程参考链接](https://blog.csdn.net/qq475703980/article/details/79701181)
+  我们直接调到ActivityThread.handleLauncherActivity()，这之后很快就会执行到Activity.onCreate()，就进入WMS阶段了。[Activity启动流程参考链接](https://blog.csdn.net/qq475703980/article/details/79701181)
+```
+private void handleLaunchActivity(ActivityClientRecord r, Intent customIntent) {
+    ......
+    // Initialize before creating the activity
+    WindowManagerGlobal.initialize();
+
+    Activity a = performLaunchActivity(r, customIntent);
+    ......
+}
+```
+   可以看到有个WindowManagerGlobal.initialize()，看名字是在初始化WMS的相关了。上面我们说道WindowManager.addView(),WindowManager的实现类是WindowManagerImpl，而实现的addView方法最终是调用到mGlobal即WindowManagerGlobal，update和remove也是调用到mGlobal，那么可以确定WMS开始了。
+```
+@Override
+public void addView(@NonNull View view, @NonNull ViewGroup.LayoutParams params) {
+    android.util.SeempLog.record_vg_layout(383,params);
+    applyDefaultToken(params);
+    mGlobal.addView(view, params, mContext.getDisplayNoVerify(), mParentWindow, mContext.getUserId());
+}
+```
+   initialize()中创建了WindowManagerService
+```
+public static void initialize() {
+    getWindowManagerService();
+}
+```
