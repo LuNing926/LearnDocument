@@ -147,3 +147,39 @@ public static void initialize() {
     getWindowManagerService();
 }
 ```
+  initialize()之后是performLaunchActivity，依次调用Activity.attach,onCreate,onStart。
+  attach的时候，对应的Window窗口也被创建起来，而且Window也与WindowManager绑定。
+  mWindow，和mWindowManager是Activity的成员变量。WindiwManager的创建是context.getSystemService(Context.WINDOW_SERVICE)。
+```
+final void attach(Context context, ActivityThread aThread,
+        Instrumentation instr, IBinder token, int ident,
+        Application application, Intent intent, ActivityInfo info,
+        CharSequence title, Activity parent, String id,
+        NonConfigurationInstances lastNonConfigurationInstances,
+        Configuration config, String referrer, IVoiceInteractor voiceInteractor,
+        Window window, ActivityConfigCallback activityConfigCallback, IBinder assistToken) {
+    //Context的绑定
+    attachBaseContext(context);
+    ......
+    //在当前Activity创建Window
+    mWindow = new PhoneWindow(this, window, activityConfigCallback);
+    mWindow.setWindowControllerCallback(mWindowControllerCallback);
+    mWindow.setCallback(this);
+    mWindow.setOnWindowDismissedCallback(this);
+    mWindow.getLayoutInflater().setPrivateFactory(this);
+	  ......
+    //为Window设置WindowManager
+    mWindow.setWindowManager(
+            (WindowManager)context.getSystemService(Context.WINDOW_SERVICE),
+            mToken, mComponent.flattenToString(),
+            (info.flags & ActivityInfo.FLAG_HARDWARE_ACCELERATED) != 0);
+    ......
+    //创建完后通过getWindowManager就可以得到WindowManager实例
+    mWindowManager = mWindow.getWindowManager();
+    mCurrentConfig = config;
+	  ......
+}
+```
+    attach完成，也完成了Window和WindowManager与Activity的绑定，确认了之前的猜测，之后就是Activity的onCreate开始加载布局，回到我们刚开始讲的地方，
+    布局加载完成后WindowManager.addView,之后我们在研究WMS到底是怎么显示窗口的。
+
