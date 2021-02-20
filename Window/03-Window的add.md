@@ -38,11 +38,6 @@ public void setView(View view, WindowManager.LayoutParams attrs, View panelParen
 - Session的addToDisplay方法调用到WindowManagerService.addWindow，并将自身也就是Session，作为参数传了进去，每个应用程序进程都会对应一个Session，WMS会用ArrayList来保存这些Session。
   这样剩下的工作就交给WMS来处理，在WMS中会为这个添加的窗口分配Surface，并确定窗口显示次序，可见负责显示界面的是画布Surface，而不是窗口本身。
   WMS会将它所管理的Surface交由SurfaceFlinger处理，SurfaceFlinger会将这些Surface混合并绘制到屏幕上。
-
-作者：刘望舒
-链接：https://www.jianshu.com/p/aadfb70f25e2
-来源：简书
-著作权归作者所有。商业转载请联系作者获得授权，非商业转载请注明出处。
 ```
 @Override
 public int addToDisplayWithoutInputChannel(IWindow window, int seq, WindowManager.LayoutParams attrs,
