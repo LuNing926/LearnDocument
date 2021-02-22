@@ -119,6 +119,7 @@ void windowAddedLocked(String packageName) {
 ```
 ### frameworks/base/core/jni/android_view_SurfaceSession.cpp
 - nativeCreate创建了SurfaceComposerClient，SurfaceFlinger在java层的client
+- 通信建立连接后，继续ViewRootImpl的requestLayout，触发第一次view的绘制，包括measure和layout
 ```
 static jlong nativeCreate(JNIEnv* env, jclass clazz) {
 44    SurfaceComposerClient* client = new SurfaceComposerClient();
