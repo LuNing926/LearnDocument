@@ -1,4 +1,5 @@
 ## AMS、WMS启动流程
+
 ### AMS启动
 - Android系统中的进程分为两种，应用进程和系统进程。
   ActivityThread就是应用进程的主线程，Android系统的应用进程启动后首先运行ActivityThread的main函数，ActivityThread和AMS进行通信，调度和执行应用进程的四大组件。
