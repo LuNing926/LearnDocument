@@ -1,11 +1,5 @@
 ## AMS、WMS启动流程
 
-### AMS启动
-- Android系统中的进程分为两种，应用进程和系统进程。
-  ActivityThread就是应用进程的主线程，Android系统的应用进程启动后首先运行ActivityThread的main函数，ActivityThread和AMS进行通信，调度和执行应用进程的四大组件。
-- SystemServer是Android的系统进程，由于系统进程中也有一些Activity和系统资源，为了保证调用方式统一，系统进程也需要ActivityThread和Context等Android运行环境。
-  所以SystemServer也是一个特殊的应用进行。
-  
 #### 一 Zygote fork SystemServer 进程
 - Zygote fork SystemServer 的过程如下：
   ZygoteInit#forkSystemServer
@@ -246,3 +240,61 @@ public void setSystemProcess() {
   如上
 - 3.6 systemReady
   各种服务启动完毕后，systemReady. 在systemReady 中先启动SystemUI, 然后启动Launcher.
+
+#### 四 WMS启动
+- WMS和AMS不同，AMS实在SystemServer.startBootstrapServices中启动，WMS是在SystemServer.startOtherServices中启动
+  初始化wms服务
+  将wms服务添加到systemserver中
+  初始化窗口管理策略类windowmanagerpolicy，调用onInitReady方法
+  通知wms 的显示准备完毕，调用displayReady
+  通知wms系统准备完毕，调用systemReady此时就可以读取屏幕的相关熟悉信息
+```
+1016    private void startOtherServices(@NonNull TimingsTraceAndSlog t) {
+    ......
+1159            t.traceBegin("StartWindowManagerService");
+1160            // WMS needs sensor service ready
+1161            ConcurrentUtils.waitForFutureNoInterrupt(mSensorServiceStart, START_SENSOR_SERVICE);
+1162            mSensorServiceStart = null;
+1163            wm = WindowManagerService.main(context, inputManager, !mFirstBoot, mOnlyCore,
+1164                    new PhoneWindowManager(), mActivityManagerService.mActivityTaskManager);
+1165            ServiceManager.addService(Context.WINDOW_SERVICE, wm, /* allowIsolated= */ false,
+1166                    DUMP_FLAG_PRIORITY_CRITICAL | DUMP_FLAG_PROTO);
+1167            ServiceManager.addService(Context.INPUT_SERVICE, inputManager,
+1168                    /* allowIsolated= */ false, DUMP_FLAG_PRIORITY_CRITICAL);
+1169            t.traceEnd();
+1170
+1171            t.traceBegin("SetWindowManagerService");
+1172            mActivityManagerService.setWindowManager(wm);
+1173            t.traceEnd();
+
+1175            t.traceBegin("WindowManagerServiceOnInitReady");
+1176            wm.onInitReady();
+1177            t.traceEnd();
+    ......
+1195            t.traceBegin("StartInputManager");
+1196            inputManager.setWindowManagerCallbacks(wm.getInputManagerCallback());
+1197            inputManager.start();
+1198            t.traceEnd();
+1199
+1200            // TODO: Use service dependencies instead.
+1201            t.traceBegin("DisplayManagerWindowManagerAndInputReady");
+1202            mDisplayManagerService.windowManagerAndInputReady();
+1203            t.traceEnd();
+    ......
+1284        t.traceBegin("MakeDisplayReady");
+1285        try {
+1286            wm.displayReady();
+1287        } catch (Throwable e) {
+1288            reportWtf("making display ready", e);
+1289        }
+1290        t.traceEnd();
+    ......
+    
+2137        t.traceBegin("MakeWindowManagerServiceReady");
+2138        try {
+2139            wm.systemReady();
+2140        } catch (Throwable e) {
+2141            reportWtf("making Window Manager Service ready", e);
+2142        }
+2143        t.traceEnd();
+```
