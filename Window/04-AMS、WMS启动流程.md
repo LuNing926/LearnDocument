@@ -138,8 +138,111 @@ private void run() {
     ......
 ```
 - 3.2 启动ActivityManagerService
-  ctivityManagerService 准备工作线程，准备Android 四大组件相关的数据结构;
+  ActivityManagerService 准备工作线程，准备Android 四大组件相关的数据结构;
+  3.1中启动AMS之前先启动了ATMS，并作为参数传给了AMS；
+  这里调用了ATMS.initialize,初始化
+```
+public ActivityManagerService(Context systemContext, ActivityTaskManagerService atm) {
+2558        LockGuard.installLock(this, LockGuard.INDEX_ACTIVITY);
+2559        mInjector = new Injector(systemContext);
+2560        mContext = systemContext;
+2561
+2562        mFactoryTest = FactoryTest.getMode();
+2563        mSystemThread = ActivityThread.currentActivityThread();
+2564        mUiContext = mSystemThread.getSystemUiContext();
+2565
+2566        Slog.i(TAG, "Memory class: " + ActivityManager.staticGetMemoryClass());
+2567
+2568        mHandlerThread = new ServiceThread(TAG,
+2569                THREAD_PRIORITY_FOREGROUND, false /*allowIo*/);
+2570        mHandlerThread.start();
+2571        mHandler = new MainHandler(mHandlerThread.getLooper());
+2572        mUiHandler = mInjector.getUiHandler(this);
+    ...... 
+2651        mActivityTaskManager = atm;
+2652        mActivityTaskManager.initialize(mIntentFirewall, mPendingIntentController,
+2653                DisplayThread.get().getLooper());
+2654        mAtmInternal = LocalServices.getService(ActivityTaskManagerInternal.class);
+    ......
+2711    }
+```
 - 3.3 AMS setSystemProcess()
+  AMS 通过 setSystemProcess 把System_Server 进程加入到AMS 的进程管理中。加载 framework-res.apk
+```
+public void setSystemProcess() {
+2100        try {
+2101            ServiceManager.addService(Context.ACTIVITY_SERVICE, this, /* allowIsolated= */ true,
+2102                    DUMP_FLAG_PRIORITY_CRITICAL | DUMP_FLAG_PRIORITY_NORMAL | DUMP_FLAG_PROTO);
+2103            ServiceManager.addService(ProcessStats.SERVICE_NAME, mProcessStats);
+2104            ServiceManager.addService("meminfo", new MemBinder(this), /* allowIsolated= */ false,
+2105                    DUMP_FLAG_PRIORITY_HIGH);
+2106            ServiceManager.addService("gfxinfo", new GraphicsBinder(this));
+2107            ServiceManager.addService("dbinfo", new DbBinder(this));
+2108            if (MONITOR_CPU_USAGE) {
+2109                ServiceManager.addService("cpuinfo", new CpuBinder(this),
+2110                        /* allowIsolated= */ false, DUMP_FLAG_PRIORITY_CRITICAL);
+2111            }
+2112            ServiceManager.addService("permission", new PermissionController(this));
+2113            ServiceManager.addService("processinfo", new ProcessInfoService(this));
+2114            ServiceManager.addService("cacheinfo", new CacheBinder(this));
+2115
+2116            ApplicationInfo info = mContext.getPackageManager().getApplicationInfo(
+2117                    "android", STOCK_PM_FLAGS | MATCH_SYSTEM_ONLY);
+2118            mSystemThread.installSystemApplicationInfo(info, getClass().getClassLoader());
+2119
+2120            synchronized (this) {
+2121                ProcessRecord app = mProcessList.newProcessRecordLocked(info, info.processName,
+2122                        false,
+2123                        0,
+2124                        new HostingRecord("system"));
+2125                app.setPersistent(true);
+2126                app.pid = MY_PID;
+2127                app.getWindowProcessController().setPid(MY_PID);
+2128                app.maxAdj = ProcessList.SYSTEM_ADJ;
+2129                app.makeActive(mSystemThread.getApplicationThread(), mProcessStats);
+2130                addPidLocked(app);
+2131                mProcessList.updateLruProcessLocked(app, false, null);
+2132                updateOomAdjLocked(OomAdjuster.OOM_ADJ_REASON_NONE);
+2133            }
+2134        } catch (PackageManager.NameNotFoundException e) {
+2135            throw new RuntimeException(
+2136                    "Unable to find android system package", e);
+2137        }
+2138
+2139        // Start watching app ops after we and the package manager are up and running.
+2140        mAppOpsService.startWatchingMode(AppOpsManager.OP_RUN_IN_BACKGROUND, null,
+2141                new IAppOpsCallback.Stub() {
+2142                    @Override public void opChanged(int op, int uid, String packageName) {
+2143                        if (op == AppOpsManager.OP_RUN_IN_BACKGROUND && packageName != null) {
+2144                            if (getAppOpsManager().checkOpNoThrow(op, uid, packageName)
+2145                                    != AppOpsManager.MODE_ALLOWED) {
+2146                                runInBackgroundDisabled(uid);
+2147                            }
+2148                        }
+2149                    }
+2150                });
+2151
+2152        final int[] cameraOp = {AppOpsManager.OP_CAMERA};
+2153        mAppOpsService.startWatchingActive(cameraOp, new IAppOpsActiveCallback.Stub() {
+2154            @Override
+2155            public void opActiveChanged(int op, int uid, String packageName, boolean active) {
+2156                cameraActiveChanged(uid, active);
+2157            }
+2158        });
+2159    }
+```
 - 3.4 installSystemProviders
+  在startOtherServices 安装 SettingProvider
+```
+1016    private void startOtherServices(@NonNull TimingsTraceAndSlog t) {
+    ......
+1122            mActivityManagerService.installSystemProviders();
+    ......
+1172            mActivityManagerService.setWindowManager(wm);
+    ......
+    }
+```
 - 3.5 setWindowManager
+  如上
 - 3.6 systemReady
+  各种服务启动完毕后，systemReady. 在systemReady 中先启动SystemUI, 然后启动Launcher.
